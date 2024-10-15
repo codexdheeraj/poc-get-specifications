@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import './App.css'; // Import custom CSS for styles
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state
+
+  const handleUpload = async (event) => {
+    const formData = new FormData();
+    formData.append('pdf', event.target.files[0]);
+
+    setLoading(true); // Set loading state to true
+
+    try {
+      const response = await axios.post('http://localhost:5000/upload-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setMarkdownContent(response.data.markdown); // Set the markdown content from response
+      console.log("Content got");
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+    } finally {
+      setLoading(false); // Set loading state to false after processing
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="pdf-uploader">
+      <input type="file" accept="application/pdf" onChange={handleUpload} />
+      {loading && (
+        <div className="loading-icon">
+          <img src="loading.gif" alt="Loading..." /> {/* Replace with your loading icon */}
+          <p>Generating content...</p>
+        </div>
+      )}
+      {!loading && markdownContent && (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {markdownContent}
+        </ReactMarkdown> // Render the markdown content
+      )}
+    </div>
+  );
+};
 
-export default App
+export default App;
